@@ -26,7 +26,7 @@ flutter_chat = chat_prompt | llm | StrOutputParser()
 tools = [
     Tool.from_function(
         name="General Chat",
-        description="For general movie chat not covered by other tools",
+        description="For general Flutter chat not covered by other tools",
         func=flutter_chat.invoke,
     )
 ]
