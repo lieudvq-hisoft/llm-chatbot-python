@@ -8,7 +8,7 @@ st.set_page_config("Ebert", page_icon=":movie_camera:")
 # Set up Session State
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hi, I'm the GraphAcademy Chatbot!  How can I help you?"},
+        {"role": "assistant", "content": "Xin chào, tôi là Chatbot của LieuSolocode! Tôi có thể giúp gì cho bạn?"},
     ]
 
 # Submit handler
