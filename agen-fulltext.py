@@ -125,6 +125,6 @@ def generate_response(user_input):
     and returns a response to be rendered in the UI
     """
 
-    response = chain.invoke(user_input)
+    response = chain.invoke(input=user_input)
 
     return response
