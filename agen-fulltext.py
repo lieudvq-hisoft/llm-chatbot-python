@@ -19,6 +19,9 @@ from langchain_community.vectorstores.neo4j_vector import Neo4jVector
 from pydantic import BaseModel, Field
 from langchain_community.vectorstores.neo4j_vector import remove_lucene_chars
 from langchain_core.runnables import  RunnablePassthrough
+from langchain.memory import ConversationBufferMemory
+
+memory = ConversationBufferMemory(return_messages=True, memory_key="chat_history")
 
 class Entities(BaseModel):
     """Identifying information about entities."""
@@ -113,6 +116,8 @@ chain = (
         {
             "context": full_retriever,
             "question": RunnablePassthrough(),
+            "chat_history": memory.load_memory_variables
+
         }
     | prompt
     | llm
@@ -124,7 +129,7 @@ def generate_response(user_input):
     Create a handler that calls the Conversational agent
     and returns a response to be rendered in the UI
     """
-
+    memory.chat_memory.add_user_message(user_input)
     response = chain.invoke(input=user_input)
-
+    memory.chat_memory.add_ai_message(response)
     return response
