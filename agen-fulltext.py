@@ -3,23 +3,11 @@ from graph import graph
 
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
-
-from langchain.tools import Tool
-
-from langchain_community.chat_message_histories import Neo4jChatMessageHistory
-
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain_core.runnables.history import RunnableWithMessageHistory
-from langchain import hub
-from langchain_core.prompts import PromptTemplate
-from tools.vector import get_flutter_text
-
-from utils import get_session_id
 from langchain_community.vectorstores.neo4j_vector import Neo4jVector
 from pydantic import BaseModel, Field
-from langchain_community.vectorstores.neo4j_vector import remove_lucene_chars
 from langchain_core.runnables import  RunnablePassthrough
 from langchain.memory import ConversationBufferMemory
+from langchain_core.output_parsers import PydanticOutputParser
 
 memory = ConversationBufferMemory(return_messages=True, memory_key="chat_history")
 
@@ -32,15 +20,22 @@ class Entities(BaseModel):
         "appear in the text",
     )
 
-entity_chain = llm.with_structured_output(Entities)
+entity_chain = llm | PydanticOutputParser(pydantic_object=Entities)
 
-def generate_full_text_query(input: str) -> str:
-    words = [el for el in remove_lucene_chars(input).split() if el]
-    if not words:
-        return ""
-    full_text_query = " AND ".join([f"{word}~2" for word in words])
-    print(f"Generated Query: {full_text_query}")
-    return full_text_query.strip()
+def extract_entities(question: str) -> Entities:
+    try:
+        full_prompt = f"""Extract entities from the following text. 
+        If no specific entities are found, return an empty list.
+        Text: {question}
+        Entities (comma-separated):"""
+        response = llm.invoke(full_prompt).content
+        entities = [e.strip() for e in response.split(',') if e.strip()]
+        
+        return Entities(names=entities)
+    
+    except Exception as e:
+        print(f"Lỗi trích xuất thực thể: {e}")
+        return Entities(names=[])
 
 # Fulltext index query
 def graph_retriever(question: str) -> str:
@@ -49,7 +44,7 @@ def graph_retriever(question: str) -> str:
     in the question
     """
     result = ""
-    entities = entity_chain.invoke(question)
+    entities = extract_entities(question)
     for entity in entities.names:
         response = graph.query(
             """CALL db.index.fulltext.queryNodes('fulltext_entity_id', $query, {limit:2})
