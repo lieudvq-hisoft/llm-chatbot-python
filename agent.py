@@ -12,6 +12,7 @@ from langchain.agents import AgentExecutor, create_react_agent
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain import hub
 from langchain_core.prompts import PromptTemplate
+from tools.vector import get_flutter_text
 
 from utils import get_session_id
 
@@ -29,7 +30,12 @@ tools = [
         name="General Chat",
         description="For general Flutter chat not covered by other tools",
         func=flutter_chat.invoke,
-    )
+    ),
+    Tool.from_function(
+        name="Flutter Search",  
+        description="For when you need to find information about Flutter",
+        func=get_flutter_text, 
+    ),
 ]
 
 def get_memory(session_id):
